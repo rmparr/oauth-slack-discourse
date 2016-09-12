@@ -115,7 +115,6 @@ register_css <<CSS
 
   .btn-social.slack {
     background: #ab9ba9;
-    text-indent: 19px;
   }
 
   .btn-social.slack:before {
