@@ -8,38 +8,38 @@ require 'auth/oauth2_authenticator'
 require 'omniauth-oauth2'
 
 class SlackAuthenticator < ::Auth::OAuth2Authenticator
-
+  
   CLIENT_ID = ENV['SLACK_CLIENT_ID']
   CLIENT_SECRET = ENV['SLACK_CLIENT_SECRET']
   TEAM_ID = ENV['SLACK_TEAM_ID']
-
+  
   def name
     'slack'
   end
-
+  
   def after_authenticate(auth_token)
     result = Auth::Result.new
-
+    
     # Grab the info we need from OmniAuth
     data = auth_token[:info]
-
+    
     provider = auth_token[:provider]
     slack_uid = auth_token["uid"]
-
+    
     result.name = data[:name]
     result.username = data[:nickname]
     result.email = data[:email]
-
+    
     result.email_valid = true
     result.extra_data = { uid: slack_uid, provider: provider }
-
+    
     current_info = ::PluginStore.get("slack", "slack_uid_#{slack_uid}")
-
+    
     if User.find_by_email(data[:email]).nil?
       user = User.create(name: data[:name], email: data[:email], username: data[:nickname], approved: true)
       ::PluginStore.set("slack", "slack_uid_#{slack_uid}",{user_id: user.id})
     end
-
+    
     result.user =
         if current_info
           User.where(id: current_info[:user_id]).first
@@ -47,16 +47,16 @@ class SlackAuthenticator < ::Auth::OAuth2Authenticator
           user
         end
     result.user ||= User.where(email: data[:email]).first
-
+    
     result
   end
-
+  
   def after_create_account(user, auth)
     data = auth[:extra_data]
     user.update_attribute(:approved, true)
     ::PluginStore.set("slack", "slack_uid_#{data[:uid]}", {user_id: user.id})
   end
-
+  
   def register_middleware(omniauth)
     omniauth.provider :slack, CLIENT_ID, CLIENT_SECRET, scope: 'identity.basic', team: TEAM_ID
   end
@@ -66,68 +66,81 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
   TEAM_ID = ENV['SLACK_TEAM_ID']
   # Give your strategy a name.
   option :name, "slack"
-
+  
   option :authorize_options, [ :scope, :team ]
-
+  
   option :client_options, {
-    site: "https://slack.com",
-    token_url: "/api/oauth.access"
+      site: "https://slack.com",
+      token_url: "/api/oauth.access"
   }
-
+  
   option :auth_token_params, {
-    mode: :query,
-    param_name: 'token'
+      mode: :query,
+      param_name: 'token'
   }
-
+  
   uid { raw_info['user_id'] }
-
+  
   info do
     {
-      name: user_info['user']['profile']['real_name_normalized'],
-      email: user_info['user']['profile']['email'],
-      nickname: user_info['user']['name'],
-      team_id: team_info['team']['id']
+        name: user_info['user']['profile']['real_name_normalized'],
+        email: user_info['user']['profile']['email'],
+        nickname: user_info['user']['name'],
+        team_id: team_info['team']['id']
     }
   end
-
+  
   extra do
     { raw_info: raw_info, user_info: user_info, team_info: team_info }
   end
-
+  
   def user_info
     @user_info ||= access_token.get("/api/users.info?user=#{raw_info['user_id']}").parsed
   end
-
+  
   def raw_info
     @raw_info ||= access_token.get("/api/auth.test").parsed
   end
-
+  
   def team_info
     @team_info ||= access_token.get("/api/users.identity").parsed
   end
   
   def callback_phase
-    # Rails.logger.info request.params.inspect
-    # Rails.logger.info TEAM_ID
-    # Rails.logger.info request.params
-    # build_access_token
     self.access_token = build_access_token
+    error = request.params["error_reason"] || request.params["error"]
     Rails.logger.info team_info
-    if team_info['team'].try(:[], 'id') != TEAM_ID
+    if !error &&
+        team_info['team'].try(:[], 'id') != TEAM_ID &&
+        !(!options.provider_ignores_state && (request.params["state"].to_s.empty? || request.params["state"] !=session.delete))
+      
       fail!('Wrong Team ID', CallbackError.new('Wrong Team ID', 'Wrong Team ID'))
     else
-      super
+      if error
+        fail!(error, CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
+      elsif !options.provider_ignores_state && (request.params["state"].to_s.empty? || request.params["state"] != session.delete("omniauth.state"))
+        fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected"))
+      else
+        self.access_token = build_access_token
+        self.access_token = access_token.refresh! if access_token.expired?
+        super
+      end
     end
+  rescue ::OAuth2::Error, CallbackError => e
+    fail!(:invalid_credentials, e)
+  rescue ::Timeout::Error, ::Errno::ETIMEDOUT => e
+    fail!(:timeout, e)
+  rescue ::SocketError => e
+    fail!(:failed_to_connect, e)
   end
-end
-
-auth_provider title: 'Sign up using Slack',
-    message: 'Log in using your Slack account. (Make sure your popup blocker is disabled.)',
-    frame_width: 920,
-    frame_height: 800,
-    authenticator: SlackAuthenticator.new('slack', trusted: true)
-
-register_css <<CSS
+  
+  auth_provider title: 'Sign up using Slack',
+                message: 'Log in using your Slack account. (Make sure your popup blocker is disabled.)',
+                frame_width: 920,
+                frame_height: 800,
+                authenticator: SlackAuthenticator.new('slack', trusted: true)
+  
+  register_css <<CSS
 
   .btn-social.slack {
     background: #08c;
