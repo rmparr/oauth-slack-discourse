@@ -107,7 +107,7 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
   end
   
   def callback_phase
-    if @team_info['team'].try(:[], 'id') != TEAM_ID
+    if team_info['team'].try(:[], 'id') != TEAM_ID
       fail!(:invalid_credentials, 'Wrong Team ID')
     else
       super
