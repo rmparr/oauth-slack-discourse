@@ -6,6 +6,11 @@
 
 require 'auth/oauth2_authenticator'
 require 'omniauth-oauth2'
+require "oauth2"
+require "omniauth"
+require "securerandom"
+require "socket"       # for SocketError
+require "timeout"      # for Timeout::Error
 
 class SlackAuthenticator < ::Auth::OAuth2Authenticator
   
@@ -61,11 +66,6 @@ class SlackAuthenticator < ::Auth::OAuth2Authenticator
     omniauth.provider :slack, CLIENT_ID, CLIENT_SECRET, scope: 'identity.basic', team: TEAM_ID
   end
 end
-require "oauth2"
-require "omniauth"
-require "securerandom"
-require "socket"       # for SocketError
-require "timeout"      # for Timeout::Error
 
 module OmniAuth
   module Strategies
@@ -75,61 +75,6 @@ module OmniAuth
     # utilize an application id and secret in order to authenticate using
     # OAuth 2.0.
     class OAuth2
-      include OmniAuth::Strategy
-      
-      def self.inherited(subclass)
-        OmniAuth::Strategy.included(subclass)
-      end
-      
-      args [:client_id, :client_secret]
-      
-      option :client_id, nil
-      option :client_secret, nil
-      option :client_options, {}
-      option :authorize_params, {}
-      option :authorize_options, [:scope]
-      option :token_params, {}
-      option :token_options, []
-      option :auth_token_params, {}
-      option :provider_ignores_state, false
-      
-      attr_accessor :access_token
-      
-      def client
-        ::OAuth2::Client.new(options.client_id, options.client_secret, deep_symbolize(options.client_options))
-      end
-      
-      def callback_url
-        full_host + script_name + callback_path
-      end
-      
-      credentials do
-        hash = {"token" => access_token.token}
-        hash.merge!("refresh_token" => access_token.refresh_token) if access_token.expires? && access_token.refresh_token
-        hash.merge!("expires_at" => access_token.expires_at) if access_token.expires?
-        hash.merge!("expires" => access_token.expires?)
-        hash
-      end
-      
-      def request_phase
-        redirect client.auth_code.authorize_url({:redirect_uri => callback_url}.merge(authorize_params))
-      end
-      
-      def authorize_params
-        options.authorize_params[:state] = SecureRandom.hex(24)
-        params = options.authorize_params.merge(options_for("authorize"))
-        if OmniAuth.config.test_mode
-          @env ||= {}
-          @env["rack.session"] ||= {}
-        end
-        session["omniauth.state"] = params[:state]
-        params
-      end
-      
-      def token_params
-        options.token_params.merge(options_for("token"))
-      end
-      
       def callback_phase # rubocop:disable AbcSize, CyclomaticComplexity, MethodLength, PerceivedComplexity
         error = request.params["error_reason"] || request.params["error"]
         if error
@@ -196,8 +141,6 @@ module OmniAuth
     end
   end
 end
-
-OmniAuth.config.add_camelization "oauth2", "OAuth2"
 
 class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
   TEAM_ID = ENV['SLACK_TEAM_ID']
