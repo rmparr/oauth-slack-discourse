@@ -132,14 +132,14 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
   rescue ::SocketError => e
     fail!(:failed_to_connect, e)
   end
-  
+  end
   auth_provider title: 'Sign up using Slack',
                 message: 'Log in using your Slack account. (Make sure your popup blocker is disabled.)',
                 frame_width: 920,
                 frame_height: 800,
                 authenticator: SlackAuthenticator.new('slack', trusted: true)
-  
-  register_css <<CSS
+
+register_css <<CSS
 
   .btn-social.slack {
     background: #08c;
@@ -157,4 +157,3 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
   }
 
 CSS
-end
