@@ -109,11 +109,9 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
     self.access_token = build_access_token
     error = request.params["error_reason"] || request.params["error"]
     Rails.logger.info team_info
-    if !error &&
-        team_info['team'].try(:[], 'id') != TEAM_ID &&
-        !(!options.provider_ignores_state && (request.params["state"].to_s.empty? || request.params["state"] !=session.delete))
+    if !error && team_info['team'].try(:[], 'id') != TEAM_ID
       
-      fail!('Wrong Team ID', CallbackError.new('Wrong Team ID', 'Wrong Team ID'))
+      fail!('Wrong Team ID', CallbackError.new(:error, 'Wrong Team ID'))
     else
       if error
         fail!(error, CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
