@@ -58,7 +58,7 @@ class SlackAuthenticator < ::Auth::OAuth2Authenticator
   end
   
   def register_middleware(omniauth)
-    omniauth.provider :slack, CLIENT_ID, CLIENT_SECRET, scope: 'identity.basic', team: TEAM_ID
+    omniauth.provider :slack, CLIENT_ID, CLIENT_SECRET, scope: 'identity.basic', name: :sign_in_with_slack, provider_ignores_state: true, team: TEAM_ID
   end
 end
 
@@ -106,30 +106,30 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
   end
   
   def callback_phase
-  error = request.params["error_reason"] || request.params["error"]
-  if error
-    fail!(error, CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
-  elsif !options.provider_ignores_state && (request.params["state"].to_s.empty? || request.params["state"] != session.delete("omniauth.state"))
-    fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected"))
-  else
-    self.access_token = build_access_token
-    if team_info && (team_info['team'].try(:[], 'id') != TEAM_ID)
-      Rails.logger.info ">> #{team_info}"
-      fail!(:invalid_credentials, CallbackError.new(:error, 'Wrong Team ID'))
+    error = request.params["error_reason"] || request.params["error"]
+    if error
+      fail!(error, CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
+    elsif !options.provider_ignores_state && (request.params["state"].to_s.empty? || request.params["state"] != session.delete("omniauth.state"))
+      fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected"))
     else
-      self.access_token = access_token.refresh! if access_token.expired?
-      env['omniauth.auth'] = auth_hash
-      call_app!
+      self.access_token = build_access_token
+      if team_info && (team_info['team'].try(:[], 'id') != TEAM_ID)
+        Rails.logger.info ">> #{team_info}"
+        fail!(:invalid_credentials, CallbackError.new(:error, 'Wrong Team ID'))
+      else
+        self.access_token = access_token.refresh! if access_token.expired?
+        env['omniauth.auth'] = auth_hash
+        call_app!
+      end
     end
+    rescue ::OAuth2::Error, CallbackError => e
+      fail!(:invalid_credentials, e)
+    rescue ::Timeout::Error, ::Errno::ETIMEDOUT => e
+      fail!(:timeout, e)
+    rescue ::SocketError => e
+      fail!(:failed_to_connect, e)
   end
-  rescue ::OAuth2::Error, CallbackError => e
-    fail!(:invalid_credentials, e)
-  rescue ::Timeout::Error, ::Errno::ETIMEDOUT => e
-    fail!(:timeout, e)
-  rescue ::SocketError => e
-    fail!(:failed_to_connect, e)
-  end
-  end
+end
   auth_provider title: 'Sign up using Slack',
                 message: 'Log in using your Slack account. (Make sure your popup blocker is disabled.)',
                 frame_width: 920,
