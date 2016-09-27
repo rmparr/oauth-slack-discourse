@@ -62,8 +62,15 @@ class SlackAuthenticator < ::Auth::OAuth2Authenticator
   end
 end
 
-module OmniAuth::Strategies::OAuth2.class_eval do
-
+module OmniAuth
+  module Strategies
+    # Authentication strategy for connecting with APIs constructed using
+    # the [OAuth 2.0 Specification](http://tools.ietf.org/html/draft-ietf-oauth-v2-10).
+    # You must generally register your application with the provider and
+    # utilize an application id and secret in order to authenticate using
+    # OAuth 2.0.
+    OAuth2.class_eval do
+      
       def callback_phase # rubocop:disable AbcSize, CyclomaticComplexity, MethodLength, PerceivedComplexity
         error = request.params["error_reason"] || request.params["error"]
         if error
@@ -127,6 +134,8 @@ module OmniAuth::Strategies::OAuth2.class_eval do
           [error, error_reason, error_uri].compact.join(" | ")
         end
       end
+    end
+  end
 end
 
 class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
