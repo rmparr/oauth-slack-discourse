@@ -11,7 +11,7 @@ class SlackAuthenticator < ::Auth::OAuth2Authenticator
 
   CLIENT_ID = ENV['SLACK_CLIENT_ID']
   CLIENT_SECRET = ENV['SLACK_CLIENT_SECRET']
-  # TEAM_ID = 'T04BM8LFP'
+  TEAM_ID = ENV['SLACK_TEAM_ID']
 
   def name
     'slack'
@@ -58,11 +58,12 @@ class SlackAuthenticator < ::Auth::OAuth2Authenticator
   end
 
   def register_middleware(omniauth)
-    omniauth.provider :slack, CLIENT_ID, CLIENT_SECRET, scope: 'identify, users:read', team: 'T04BM8LFP'
+    omniauth.provider :slack, CLIENT_ID, CLIENT_SECRET, scope: 'identify, users', team: TEAM_ID
   end
 end
 
 class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
+  TEAM_ID = ENV['SLACK_TEAM_ID']
   # Give your strategy a name.
   option :name, "slack"
 
@@ -84,12 +85,13 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
     {
       name: user_info['user']['profile']['real_name_normalized'],
       email: user_info['user']['profile']['email'],
-      nickname: user_info['user']['name']
+      nickname: user_info['user']['name'],
+      team_id: team_info['team']['id']
     }
   end
 
   extra do
-    { raw_info: raw_info, user_info: user_info }
+    { raw_info: raw_info, user_info: user_info, team_info: team_info }
   end
 
   def user_info
@@ -98,6 +100,11 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
 
   def raw_info
     @raw_info ||= access_token.get("/api/auth.test").parsed
+  end
+
+  def team_info
+    @team_info ||= access_token.get("/api/users.identity").parsed
+    fail!(:invalid_credentials, 'Wrong Team ID') if @team_info['team']['id'] != TEAM_ID
   end
 end
 
