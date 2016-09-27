@@ -104,9 +104,14 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
 
   def team_info
     @team_info ||= access_token.get("/api/users.identity").parsed
-    p user_info
-    p @team_info
-    fail!(:invalid_credentials, 'Wrong Team ID') if @team_info['team']['id'] != TEAM_ID
+  end
+  
+  def callback_phase
+    if @team_info['team'].try(:[], 'id') != TEAM_ID
+      fail!(:invalid_credentials, 'Wrong Team ID')
+    else
+      super
+    end
   end
 end
 
