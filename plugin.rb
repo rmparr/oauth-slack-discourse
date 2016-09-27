@@ -62,7 +62,7 @@ class SlackAuthenticator < ::Auth::OAuth2Authenticator
   end
 end
 
-module OmniAuth::Strategies::OAuth2.class_eval do
+module OmniAuth::Strategies::OAuth2.module_eval do
   def team_info
     @team_info ||= access_token.get("/api/users.identity").parsed
   end
