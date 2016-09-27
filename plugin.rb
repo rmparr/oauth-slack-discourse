@@ -118,7 +118,6 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
       elsif !options.provider_ignores_state && (request.params["state"].to_s.empty? || request.params["state"] != session.delete("omniauth.state"))
         fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected"))
       else
-        self.access_token = build_access_token
         self.access_token = access_token.refresh! if access_token.expired?
         super
       end
