@@ -62,43 +62,33 @@ class SlackAuthenticator < ::Auth::OAuth2Authenticator
   end
 end
 
-module OmniAuth::Strategies::OAuth2.module_eval do
-  def team_info
-    @team_info ||= access_token.get("/api/users.identity").parsed
-  end
-  
-  def callback_phase
-    error = request.params["error_reason"] || request.params["error"]
-    if error
-      fail!(error, CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
-    elsif !options.provider_ignores_state && (request.params["state"].to_s.empty? || request.params["state"] != session.delete("omniauth.state"))
-      fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected"))
-    else
-      self.access_token = build_access_token
-      if team_info && (team_info['team'].try(:[], 'id') != TEAM_ID)
-        Rails.logger.info ">> #{team_info}"
-        fail!(:invalid_credentials, CallbackError.new(:error, 'Wrong Team ID'))
-      else
-        self.access_token = access_token.refresh! if access_token.expired?
-        super
+module OmniAuth
+  module Strategies
+    class OAuth2
+      def callback_phase
+        error = request.params["error_reason"] || request.params["error"]
+        if error
+          fail!(error, CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
+        elsif !options.provider_ignores_state && (request.params["state"].to_s.empty? || request.params["state"] != session.delete("omniauth.state"))
+          fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected"))
+        else
+          self.access_token = build_access_token
+          ac = access_token.get("/api/users.identity").parsed
+          if ac && (ac['team'].try(:[], 'id') != TEAM_ID)
+            Rails.logger.info ">> #{team_info}"
+            fail!(:invalid_credentials, CallbackError.new(:error, 'Wrong Team ID'))
+          else
+            self.access_token = access_token.refresh! if access_token.expired?
+            super
+          end
+        end
+      rescue ::OAuth2::Error, CallbackError => e
+        fail!(:invalid_credentials, e)
+      rescue ::Timeout::Error, ::Errno::ETIMEDOUT => e
+        fail!(:timeout, e)
+      rescue ::SocketError => e
+        fail!(:failed_to_connect, e)
       end
-    end
-  rescue ::OAuth2::Error, CallbackError => e
-    fail!(:invalid_credentials, e)
-  rescue ::Timeout::Error, ::Errno::ETIMEDOUT => e
-    fail!(:timeout, e)
-  rescue ::SocketError => e
-    fail!(:failed_to_connect, e)
-  end
-  class CallbackError < StandardError
-    attr_accessor :error, :error_reason, :error_uri
-    def initialize(error, error_reason = nil, error_uri = nil)
-      self.error = error
-      self.error_reason = error_reason
-      self.error_uri = error_uri
-    end
-    def message
-      [error, error_reason, error_uri].compact.join(" | ")
     end
   end
 end
