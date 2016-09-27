@@ -65,6 +65,7 @@ end
 module OmniAuth
   module Strategies
     OAuth2.class_eval do
+      TEAM_ID = ENV['SLACK_TEAM_ID']
       
       def callback_phase # rubocop:disable AbcSize, CyclomaticComplexity, MethodLength, PerceivedComplexity
         error = request.params["error_reason"] || request.params["error"]
@@ -95,7 +96,6 @@ module OmniAuth
 end
 
 class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
-  TEAM_ID = ENV['SLACK_TEAM_ID']
   # Give your strategy a name.
   
   option :name, "slack"
