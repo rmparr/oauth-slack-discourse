@@ -107,9 +107,12 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
   end
   
   def callback_phase
-    Rails.logger.info request.params.inspect
-    Rails.logger.info TEAM_ID
-    Rails.logger.info request.params
+    # Rails.logger.info request.params.inspect
+    # Rails.logger.info TEAM_ID
+    # Rails.logger.info request.params
+    # build_access_token
+    self.access_token = build_access_token
+    Rails.logger.info team_info
     if team_info['team'].try(:[], 'id') != TEAM_ID
       fail!(:invalid_credentials, 'Wrong Team ID')
     else
