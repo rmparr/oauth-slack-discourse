@@ -58,7 +58,7 @@ class SlackAuthenticator < ::Auth::OAuth2Authenticator
   end
 
   def register_middleware(omniauth)
-    omniauth.provider :slack, CLIENT_ID, CLIENT_SECRET, scope: 'identify, users:read', team: TEAM_ID
+    omniauth.provider :slack, CLIENT_ID, CLIENT_SECRET, scope: 'identity.basic, users:read', team: TEAM_ID
   end
 end
 
@@ -114,7 +114,7 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
     self.access_token = build_access_token
     Rails.logger.info team_info
     if team_info['team'].try(:[], 'id') != TEAM_ID
-      fail!(:invalid_credentials, 'Wrong Team ID')
+      fail!('Wrong Team ID', CallbackError.new('Wrong Team ID', 'Wrong Team ID'))
     else
       super
     end
