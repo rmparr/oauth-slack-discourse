@@ -85,13 +85,12 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
     {
         name: user_info['user']['profile']['real_name_normalized'],
         email: user_info['user']['profile']['email'],
-        nickname: user_info['user']['name'],
-        team_id: team_info['team']['id']
+        nickname: user_info['user']['name']
     }
   end
   
   extra do
-    { raw_info: raw_info, user_info: user_info, team_info: team_info }
+    { raw_info: raw_info, user_info: user_info }
   end
   
   def user_info
@@ -158,3 +157,4 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
   }
 
 CSS
+end
