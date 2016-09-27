@@ -139,14 +139,14 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
             fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected"))
           else
             self.access_token = build_access_token
-            ac = access_token.get("/api/users.identity").parsed
-            if ac && (ac['team'].try(:[], 'id') != TEAM_ID)
-              Rails.logger.info ">> #{ac}"
-              fail!(:invalid_credentials, CallbackError.new(:error, 'Wrong Team ID'))
-            else
+            # ac = access_token.get("/api/users.identity").parsed
+            # if ac && (ac['team'].try(:[], 'id') != TEAM_ID)
+            #   Rails.logger.info ">> #{ac}"
+            #   fail!(:invalid_credentials, CallbackError.new(:error, 'Wrong Team ID'))
+            # else
               self.access_token = access_token.refresh! if access_token.expired?
               super
-            end
+            # end
           end
         rescue ::OAuth2::Error, CallbackError => e
           fail!(:invalid_credentials, e)
