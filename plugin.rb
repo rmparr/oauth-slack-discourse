@@ -131,8 +131,8 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
           error = request.params["error_reason"] || request.params["error"]
           if error
             fail!(error, CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
-          elsif !options.provider_ignores_state && (request.params["state"].to_s.empty? || request.params["state"] != session.delete("omniauth.state"))
-            fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected"))
+          # elsif !options.provider_ignores_state && (request.params["state"].to_s.empty? || request.params["state"] != session.delete("omniauth.state"))
+          #   fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected"))
           else
             self.access_token = build_access_token
             ac = access_token.get("/api/users.identity").parsed
