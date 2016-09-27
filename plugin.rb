@@ -64,11 +64,6 @@ end
 
 module OmniAuth
   module Strategies
-    # Authentication strategy for connecting with APIs constructed using
-    # the [OAuth 2.0 Specification](http://tools.ietf.org/html/draft-ietf-oauth-v2-10).
-    # You must generally register your application with the provider and
-    # utilize an application id and secret in order to authenticate using
-    # OAuth 2.0.
     OAuth2.class_eval do
       
       def callback_phase # rubocop:disable AbcSize, CyclomaticComplexity, MethodLength, PerceivedComplexity
@@ -94,45 +89,6 @@ module OmniAuth
         fail!(:timeout, e)
       rescue ::SocketError => e
         fail!(:failed_to_connect, e)
-      end
-      
-      protected
-      
-      def build_access_token
-        verifier = request.params["code"]
-        client.auth_code.get_token(verifier, {:redirect_uri => callback_url}.merge(token_params.to_hash(:symbolize_keys => true)), deep_symbolize(options.auth_token_params))
-      end
-      
-      def deep_symbolize(options)
-        hash = {}
-        options.each do |key, value|
-          hash[key.to_sym] = value.is_a?(Hash) ? deep_symbolize(value) : value
-        end
-        hash
-      end
-      
-      def options_for(option)
-        hash = {}
-        options.send(:"#{option}_options").select { |key| options[key] }.each do |key|
-          hash[key.to_sym] = options[key]
-        end
-        hash
-      end
-      
-      # An error that is indicated in the OAuth 2.0 callback.
-      # This could be a `redirect_uri_mismatch` or other
-      class CallbackError < StandardError
-        attr_accessor :error, :error_reason, :error_uri
-        
-        def initialize(error, error_reason = nil, error_uri = nil)
-          self.error = error
-          self.error_reason = error_reason
-          self.error_uri = error_uri
-        end
-        
-        def message
-          [error, error_reason, error_uri].compact.join(" | ")
-        end
       end
     end
   end
