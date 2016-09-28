@@ -58,15 +58,48 @@ class SlackAuthenticator < ::Auth::OAuth2Authenticator
   end
   
   def register_middleware(omniauth)
-    # omniauth.provider :slack, CLIENT_ID, CLIENT_SECRET, scope: 'identity.basic', name: :sign_in_with_slack, team: TEAM_ID
-    # omniauth.provider :slack, CLIENT_ID, CLIENT_SECRET, scope: 'identity.basic, team:read, users:read', team: TEAM_ID
-    omniauth.provider :slack, CLIENT_ID, CLIENT_SECRET, scope: 'identify, users:read', team: TEAM_ID
+    omniauth.provider :slack, CLIENT_ID, CLIENT_SECRET, scope: 'identity.basic', name: :sign_in_with_slack, team: TEAM_ID
+    omniauth.provider :slack, CLIENT_ID, CLIENT_SECRET, scope: 'identify, team:read, users:read', provider_ignores_state: true, team: TEAM_ID
+    # omniauth.provider :slack, CLIENT_ID, CLIENT_SECRET, scope: 'identify, users:read', team: TEAM_ID
   end
 end
 
+# module OmniAuth
+#   module Strategies
+#     OAuth2.class_eval do
+#       TEAM_ID = ENV['SLACK_TEAM_ID']
+#
+#       def callback_phase # rubocop:disable AbcSize, CyclomaticComplexity, MethodLength, PerceivedComplexity
+#         error = request.params["error_reason"] || request.params["error"]
+#         if error
+#           fail!(error, CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
+#         elsif !options.provider_ignores_state && (request.params["state"].to_s.empty? || request.params["state"] != session.delete("omniauth.state"))
+#           fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected"))
+#         else
+#           self.access_token = build_access_token
+#           ac = access_token.get("/api/users.identity").parsed
+#           if ac && (ac['team'].try(:[], 'id') != TEAM_ID)
+#             Rails.logger.info ">> #{team_info}"
+#             fail!(:invalid_credentials, CallbackError.new(:error, 'Wrong Team ID'))
+#           else
+#             self.access_token = access_token.refresh! if access_token.expired?
+#             super
+#           end
+#         end
+#       rescue ::OAuth2::Error, CallbackError => e
+#         fail!(:invalid_credentials, e)
+#       rescue ::Timeout::Error, ::Errno::ETIMEDOUT => e
+#         fail!(:timeout, e)
+#       rescue ::SocketError => e
+#         fail!(:failed_to_connect, e)
+#       end
+#     end
+#   end
+# end
+
 class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
   # Give your strategy a name.
-  # include OmniAuth::Strategy
+  include OmniAuth::Strategy
   
   TEAM_ID = ENV['SLACK_TEAM_ID']
   
@@ -102,39 +135,39 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
     { raw_info: raw_info, user_info: user_info }
   end
 
-        # def callback_phase # rubocop:disable AbcSize, CyclomaticComplexity, MethodLength, PerceivedComplexity
-        #   error = request.params["error_reason"] || request.params["error"]
-        #   if error
-        #     fail!(error, CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
-        #   elsif !options.provider_ignores_state && (request.params["state"].to_s.empty? || request.params["state"] != session.delete("omniauth.state"))
-        #     fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected"))
-        #   else
-        #     self.access_token = build_access_token
-        #     Rails.logger.info ">> #{ user_info }"
-        #     Rails.logger.info ">> #{ raw_info }"
-        #     ac = access_token.get("/api/users.identity").parsed
-        #     Rails.logger.info ">> #{ac['team']}"
-        #     Rails.logger.info ">> #{ac['team'].try(:[], 'id').to_s}"
-        #     Rails.logger.info ">> #{TEAM_ID}"
-        #     Rails.logger.info ">> #{(ac['team'].try(:[], 'id').to_s == TEAM_ID.to_s)}"
-        #
-        #     if ac && (ac['team'].try(:[], 'id').to_s != TEAM_ID.to_s)
-        #       Rails.logger.info ">> #{ac}"
-        #       error_message = "Wrong Team ID. You can login with '#{ac['team']['name']}' only with ConversionWorld team"
-        #       fail!(error_message, CallbackError.new("Wrong Team ID", "Wrong Team ID", request.params["error_uri"]))
-        #     else
-        #       self.access_token = access_token.refresh! if access_token.expired?
-        #       m = OmniAuth::Strategy.instance_method(:callback_phase).bind(self)
-        #       m.call
-        #     end
-        #   end
-        # rescue ::OAuth2::Error, CallbackError => e
-        #   fail!(:invalid_credentials, e)
-        # rescue ::Timeout::Error, ::Errno::ETIMEDOUT => e
-        #   fail!(:timeout, e)
-        # rescue ::SocketError => e
-        #   fail!(:failed_to_connect, e)
-        # end
+        def callback_phase # rubocop:disable AbcSize, CyclomaticComplexity, MethodLength, PerceivedComplexity
+          error = request.params["error_reason"] || request.params["error"]
+          if error
+            fail!(error, CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
+          elsif !options.provider_ignores_state && (request.params["state"].to_s.empty? || request.params["state"] != session.delete("omniauth.state"))
+            fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected"))
+          else
+            self.access_token = build_access_token
+            Rails.logger.info ">> #{ user_info }"
+            Rails.logger.info ">> #{ raw_info }"
+            ac = access_token.get("/api/users.identity").parsed
+            Rails.logger.info ">> #{ac['team']}"
+            Rails.logger.info ">> #{ac['team'].try(:[], 'id').to_s}"
+            Rails.logger.info ">> #{TEAM_ID}"
+            Rails.logger.info ">> #{(ac['team'].try(:[], 'id').to_s == TEAM_ID.to_s)}"
+            
+            if ac && (ac['team'].try(:[], 'id').to_s != TEAM_ID.to_s)
+              Rails.logger.info ">> #{ac}"
+              error_message = "Wrong Team ID. You can login with '#{ac['team']['name']}' only with ConversionWorld team"
+              fail!(error_message, CallbackError.new("Wrong Team ID", "Wrong Team ID", request.params["error_uri"]))
+            else
+              self.access_token = access_token.refresh! if access_token.expired?
+              m = OmniAuth::Strategy.instance_method(:callback_phase).bind(self)
+              m.call
+            end
+          end
+        rescue ::OAuth2::Error, CallbackError => e
+          fail!(:invalid_credentials, e)
+        rescue ::Timeout::Error, ::Errno::ETIMEDOUT => e
+          fail!(:timeout, e)
+        rescue ::SocketError => e
+          fail!(:failed_to_connect, e)
+        end
 
   def user_info
     @user_info ||= access_token.get("/api/users.info?user=#{raw_info['user_id']}").parsed
