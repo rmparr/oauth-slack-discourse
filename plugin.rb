@@ -58,7 +58,7 @@ class SlackAuthenticator < ::Auth::OAuth2Authenticator
   end
   
   def register_middleware(omniauth)
-    omniauth.provider :slack, CLIENT_ID, CLIENT_SECRET, scope: 'identify, users:read', provider_ignores_state: true, team: TEAM_ID
+    omniauth.provider :slack, CLIENT_ID, CLIENT_SECRET, scope: 'identity.basic, users:read', provider_ignores_state: true, team: TEAM_ID
   end
 end
 
@@ -140,6 +140,7 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
           else
             self.access_token = build_access_token
             ac = access_token.get("/api/users.identity").parsed
+            Rails.logger.info ">> #{ac['team']}"
             Rails.logger.info ">> #{ac['team'].try(:[], 'id').to_s}"
             Rails.logger.info ">> #{TEAM_ID}"
             Rails.logger.info ">> #{(ac['team'].try(:[], 'id').to_s != TEAM_ID)}"
