@@ -141,8 +141,8 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
             self.access_token = build_access_token
             ac = access_token.get("/api/users.identity").parsed
             if ac && (ac['team'].try(:[], 'id') != TEAM_ID)
-              Rails.logger.info ">> #{ac}"
-              fail!(:invalid_credentials, CallbackError.new(:error, 'Wrong Team ID'))
+              # Rails.logger.info ">> #{ac}"
+              fail!(:error, CallbackError.new('Wrong Team ID', 'Wrong Team ID', request.params["error_uri"]))
             else
               self.access_token = access_token.refresh! if access_token.expired?
 
