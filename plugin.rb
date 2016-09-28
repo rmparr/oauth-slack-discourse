@@ -151,9 +151,7 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
               fail!(error_message, CallbackError.new("Wrong Team ID", "Wrong Team ID", request.params["error_uri"]))
             else
               self.access_token = access_token.refresh! if access_token.expired?
-
-              env['omniauth.auth'] = auth_hash
-              call_app!
+              super
             end
           end
         rescue ::OAuth2::Error, CallbackError => e
