@@ -113,6 +113,7 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
             Rails.logger.info ">> #{ user_info }"
             Rails.logger.info ">> #{ raw_info }"
             ac = access_token.get("/api/users.identity").parsed
+            Rails.logger.info ">> #{ac}"
             Rails.logger.info ">> #{ac['team']}"
             Rails.logger.info ">> #{ac['team'].try(:[], 'id').to_s}"
             Rails.logger.info ">> #{TEAM_ID}"
