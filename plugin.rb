@@ -143,9 +143,9 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
             Rails.logger.info ">> #{ac['team']}"
             Rails.logger.info ">> #{ac['team'].try(:[], 'id').to_s}"
             Rails.logger.info ">> #{TEAM_ID}"
-            Rails.logger.info ">> #{(ac['team'].try(:[], 'id').to_s != TEAM_ID)}"
+            Rails.logger.info ">> #{(ac['team'].try(:[], 'id').to_s != TEAM_ID.to_s)}"
             
-            if ac && (ac['team'].try(:[], 'id').to_s != TEAM_ID)
+            if ac && (ac['team'].try(:[], 'id').to_s != TEAM_ID.to_s)
               Rails.logger.info ">> #{ac}"
               error_message = "Wrong Team ID. You can login with '#{ac['team']['name']}' only with ConversionWorld team"
               fail!(error_message, CallbackError.new("Wrong Team ID", "Wrong Team ID", request.params["error_uri"]))
