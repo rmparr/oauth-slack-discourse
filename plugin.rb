@@ -124,7 +124,7 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
               Rails.logger.info ">> #{ac}"
               error_message = "You are not currently part of the Conversion World community. \n Please request an invite via https://www.conversionworld.co/community"
               # return fail!(error_message, CallbackError.new("Wrong Team ID", "Wrong Team ID", '/auth/failure'))
-              fail!(:failed_to_connect, CallbackError.new("Wrong Team ID", "Wrong Team ID", '/auth/failure'))
+              fail!(error_message, CallbackError.new("Wrong Team ID", "Wrong Team ID", '/auth/failure'))
             else
               self.access_token = access_token.refresh! if access_token.expired?
               m = OmniAuth::Strategy.instance_method(:callback_phase).bind(self)
