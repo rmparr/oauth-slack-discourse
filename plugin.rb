@@ -58,7 +58,7 @@ class SlackAuthenticator < ::Auth::OAuth2Authenticator
   end
   
   def register_middleware(omniauth)
-    provider :slack, CLIENT_ID, CLIENT_SECRET, scope: 'identity.basic', name: :sign_in_with_slack, team: TEAM_ID
+    omniauth.provider :slack, CLIENT_ID, CLIENT_SECRET, scope: 'identity.basic', name: :sign_in_with_slack, team: TEAM_ID
     omniauth.provider :slack, CLIENT_ID, CLIENT_SECRET, scope: 'identify, team:read, users:read', provider_ignores_state: true, team: TEAM_ID
   end
 end
