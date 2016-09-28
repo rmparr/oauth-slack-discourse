@@ -127,9 +127,9 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
               # return false
             else
               self.access_token = access_token.refresh! if access_token.expired?
-              m = OmniAuth::Strategy.instance_method(:callback_phase).bind(self)
-              m.call
             end
+            m = OmniAuth::Strategy.instance_method(:callback_phase).bind(self)
+            m.call
           end
         rescue ::OAuth2::Error, CallbackError => e
           fail!(:invalid_credentials, e)
