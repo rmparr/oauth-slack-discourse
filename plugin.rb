@@ -97,6 +97,8 @@ end
 
 class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
   # Give your strategy a name.
+  include OmniAuth::Strategy
+  
   TEAM_ID = ENV['SLACK_TEAM_ID']
   
   option :name, "slack"
@@ -143,7 +145,7 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
             Rails.logger.info ">> #{ac['team']}"
             Rails.logger.info ">> #{ac['team'].try(:[], 'id').to_s}"
             Rails.logger.info ">> #{TEAM_ID}"
-            Rails.logger.info ">> #{(ac['team'].try(:[], 'id').to_s != TEAM_ID.to_s)}"
+            Rails.logger.info ">> #{(ac['team'].try(:[], 'id').to_s == TEAM_ID.to_s)}"
             
             if ac && (ac['team'].try(:[], 'id').to_s != TEAM_ID.to_s)
               Rails.logger.info ">> #{ac}"
@@ -151,7 +153,9 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
               fail!(error_message, CallbackError.new("Wrong Team ID", "Wrong Team ID", request.params["error_uri"]))
             else
               self.access_token = access_token.refresh! if access_token.expired?
-              super
+              grandparent = self.class.superclass.superclass
+              meth = grandparent.instance_method(:callback_phase)
+              meth.bind(self).call
             end
           end
         rescue ::OAuth2::Error, CallbackError => e
