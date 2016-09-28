@@ -58,7 +58,7 @@ class SlackAuthenticator < ::Auth::OAuth2Authenticator
   end
   
   def register_middleware(omniauth)
-    omniauth.provider :slack, CLIENT_ID, CLIENT_SECRET, scope: 'identity.basic', provider_ignores_state: true, team: TEAM_ID
+    omniauth.provider :slack, CLIENT_ID, CLIENT_SECRET, scope: 'identity.basic, users.info', provider_ignores_state: true, team: TEAM_ID
   end
 end
 
@@ -141,8 +141,8 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
             fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected"))
           else
             self.access_token = build_access_token
-            p user_info
-            p raw_info
+            Rails.logger.info ">> #{ user_info }"
+            Rails.logger.info ">> #{ raw_info }"
             ac = access_token.get("/api/users.identity").parsed
             Rails.logger.info ">> #{ac['team']}"
             Rails.logger.info ">> #{ac['team'].try(:[], 'id').to_s}"
