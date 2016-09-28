@@ -1,3 +1,9 @@
+# name: Slack Oauth2 Discourse
+# about: This plugin allows your users to sign up/in using their Slack account.
+# version: 0.3
+# authors: Daniel Climent
+# url: https://github.com/4xposed/oauth-slack-discourse
+
 require 'auth/oauth2_authenticator'
 require 'omniauth-oauth2'
 
@@ -52,17 +58,52 @@ class SlackAuthenticator < ::Auth::OAuth2Authenticator
   end
   
   def register_middleware(omniauth)
-    unless TEAM_ID.nil?
-      omniauth.provider :slack, CLIENT_ID, CLIENT_SECRET, scope: 'identify, users:read', team: TEAM_ID
-    else
-      omniauth.provider :slack, CLIENT_ID, CLIENT_SECRET, scope: 'identify, users:read'
-    end
+    omniauth.provider :slack, CLIENT_ID, CLIENT_SECRET, scope: 'identity.basic', provider_ignores_state: true, team: TEAM_ID
   end
 end
 
+# module OmniAuth
+#   module Strategies
+#     OAuth2.class_eval do
+#       TEAM_ID = ENV['SLACK_TEAM_ID']
+#
+#       def callback_phase # rubocop:disable AbcSize, CyclomaticComplexity, MethodLength, PerceivedComplexity
+#         error = request.params["error_reason"] || request.params["error"]
+#         if error
+#           fail!(error, CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
+#         elsif !options.provider_ignores_state && (request.params["state"].to_s.empty? || request.params["state"] != session.delete("omniauth.state"))
+#           fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected"))
+#         else
+#           self.access_token = build_access_token
+#           ac = access_token.get("/api/users.identity").parsed
+#           if ac && (ac['team'].try(:[], 'id') != TEAM_ID)
+#             Rails.logger.info ">> #{team_info}"
+#             fail!(:invalid_credentials, CallbackError.new(:error, 'Wrong Team ID'))
+#           else
+#             self.access_token = access_token.refresh! if access_token.expired?
+#             super
+#           end
+#         end
+#       rescue ::OAuth2::Error, CallbackError => e
+#         fail!(:invalid_credentials, e)
+#       rescue ::Timeout::Error, ::Errno::ETIMEDOUT => e
+#         fail!(:timeout, e)
+#       rescue ::SocketError => e
+#         fail!(:failed_to_connect, e)
+#       end
+#     end
+#   end
+# end
+
 class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
   # Give your strategy a name.
+  TEAM_ID = ENV['SLACK_TEAM_ID']
+  
   option :name, "slack"
+  
+  option :provider_ignores_state, true
+  
+  option :team, TEAM_ID
   
   option :authorize_options, [ :scope, :team ]
   
@@ -89,7 +130,34 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
   extra do
     { raw_info: raw_info, user_info: user_info }
   end
-  
+
+        def callback_phase # rubocop:disable AbcSize, CyclomaticComplexity, MethodLength, PerceivedComplexity
+          error = request.params["error_reason"] || request.params["error"]
+          if error
+            fail!(error, CallbackError.new(request.params["error"], request.params["error_description"] || request.params["error_reason"], request.params["error_uri"]))
+          elsif !options.provider_ignores_state && (request.params["state"].to_s.empty? || request.params["state"] != session.delete("omniauth.state"))
+            fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected"))
+          else
+            self.access_token = build_access_token
+            ac = access_token.get("/api/users.identity").parsed
+            if ac && (ac['team'].try(:[], 'id') != TEAM_ID)
+              Rails.logger.info ">> #{ac}"
+              fail!(:invalid_credentials, CallbackError.new(:error, 'Wrong Team ID'))
+            else
+              self.access_token = access_token.refresh! if access_token.expired?
+
+              env['omniauth.auth'] = auth_hash
+              call_app!
+            end
+          end
+        rescue ::OAuth2::Error, CallbackError => e
+          fail!(:invalid_credentials, e)
+        rescue ::Timeout::Error, ::Errno::ETIMEDOUT => e
+          fail!(:timeout, e)
+        rescue ::SocketError => e
+          fail!(:failed_to_connect, e)
+        end
+
   def user_info
     @user_info ||= access_token.get("/api/users.info?user=#{raw_info['user_id']}").parsed
   end
@@ -98,12 +166,11 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
     @raw_info ||= access_token.get("/api/auth.test").parsed
   end
 end
-
-auth_provider title: 'Sign up using Slack',
-              message: 'Log in using your Slack account. (Make sure your popup blocker is disabled.)',
-              frame_width: 920,
-              frame_height: 800,
-              authenticator: SlackAuthenticator.new('slack', trusted: true)
+  auth_provider title: 'Sign up using Slack',
+                message: 'Log in using your Slack account. (Make sure your popup blocker is disabled.)',
+                frame_width: 920,
+                frame_height: 800,
+                authenticator: SlackAuthenticator.new('slack', trusted: true)
 
 register_css <<CSS
 
