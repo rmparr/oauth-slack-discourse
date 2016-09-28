@@ -167,10 +167,14 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
 
   def user_info
     @user_info ||= access_token.get("/api/users.info?user=#{raw_info['user_id']}").parsed
+    p @user_info
+    @user_info
   end
   
   def raw_info
     @raw_info ||= access_token.get("/api/auth.test").parsed
+    p @raw_info
+    @raw_info
   end
 end
   auth_provider title: 'Sign up using Slack',
