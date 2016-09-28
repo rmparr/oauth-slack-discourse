@@ -194,10 +194,3 @@ register_css <<CSS
   }
 
 CSS
-
-::Users::OmniauthCallbacksController.class_eval do
-  def failure
-    flash[:error] = params[:message] || I18n.t("login.omniauth_error")
-    render layout: 'no_ember'
-  end
-end
