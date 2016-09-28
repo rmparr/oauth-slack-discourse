@@ -146,7 +146,8 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
             
             if ac && (ac['team'].try(:[], 'id').to_s != TEAM_ID)
               Rails.logger.info ">> #{ac}"
-              fail!('Wrong Team ID', CallbackError.new('Wrong Team ID', 'Wrong Team ID', request.params["error_uri"]))
+              error_message = "Wrong Team ID. You can login with '#{ac['team']['name']}' only with ConversionWorld team"
+              fail!(error_message, CallbackError.new("Wrong Team ID", "Wrong Team ID", request.params["error_uri"]))
             else
               self.access_token = access_token.refresh! if access_token.expired?
 
