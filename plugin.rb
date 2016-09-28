@@ -140,7 +140,11 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
           else
             self.access_token = build_access_token
             ac = access_token.get("/api/users.identity").parsed
-            if ac && (ac['team'].try(:[], 'id') != TEAM_ID)
+            Rails.logger.info ">> #{ac['team'].try(:[], 'id').to_s}"
+            Rails.logger.info ">> #{TEAM_ID}"
+            Rails.logger.info ">> #{(ac['team'].try(:[], 'id').to_s != TEAM_ID)}"
+            
+            if ac && (ac['team'].try(:[], 'id').to_s != TEAM_ID)
               Rails.logger.info ">> #{ac}"
               fail!('Wrong Team ID', CallbackError.new('Wrong Team ID', 'Wrong Team ID', request.params["error_uri"]))
             else
