@@ -9,7 +9,7 @@ require 'omniauth-oauth2'
 
 class SlackAuthenticator < ::Auth::OAuth2Authenticator
   
-  CLIENT_ID = ENV['SLACK_CLIENT_ID']
+  CLIENT_ID = ENV['SLACK_CLIENT_IDE']
   CLIENT_SECRET = ENV['SLACK_CLIENT_SECRET']
   TEAM_ID = ENV['SLACK_TEAM_ID']
   
