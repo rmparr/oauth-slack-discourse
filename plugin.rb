@@ -123,7 +123,7 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
   
   info do
     {
-        name: user_info['user']['profile'].try(:[], 'real_name_normalized') || user_info['user']['name'],
+        name: user_info['user']['profile']['real_name_normalized'],
         email: user_info['user']['profile']['email'],
         nickname: user_info['user']['name']
     }
@@ -141,6 +141,8 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
             fail!(:csrf_detected, CallbackError.new(:csrf_detected, "CSRF detected"))
           else
             self.access_token = build_access_token
+            p user_info
+            p raw_info
             ac = access_token.get("/api/users.identity").parsed
             Rails.logger.info ">> #{ac['team']}"
             Rails.logger.info ">> #{ac['team'].try(:[], 'id').to_s}"
@@ -167,14 +169,10 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
 
   def user_info
     @user_info ||= access_token.get("/api/users.info?user=#{raw_info['user_id']}").parsed
-    p @user_info
-    @user_info
   end
   
   def raw_info
     @raw_info ||= access_token.get("/api/auth.test").parsed
-    p @raw_info
-    @raw_info
   end
 end
   auth_provider title: 'Sign up using Slack',
