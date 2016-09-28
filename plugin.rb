@@ -123,7 +123,7 @@ class OmniAuth::Strategies::Slack < OmniAuth::Strategies::OAuth2
   
   info do
     {
-        name: user_info['user']['profile']['real_name_normalized'],
+        name: user_info['user']['profile'].try(:[], 'real_name_normalized') || user_info['user']['name'],
         email: user_info['user']['profile']['email'],
         nickname: user_info['user']['name']
     }
