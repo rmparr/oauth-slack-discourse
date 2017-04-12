@@ -59,9 +59,9 @@ class SlackAuthenticator < ::Auth::OAuth2Authenticator
 
   def register_middleware(omniauth)
     unless TEAM_ID.nil?
-     omniauth.provider :slack, CLIENT_ID, CLIENT_SECRET, scope: 'identity.basic, identity.email, identity.team, identity.avatar', team: TEAM_ID
+     omniauth.provider :slack, CLIENT_ID, CLIENT_SECRET, scope: 'identify, identity.basic, identity.email, identity.team, identity.avatar', team: TEAM_ID
     else
-     omniauth.provider :slack, CLIENT_ID, CLIENT_SECRET, scope: 'identity.basic, identity.email, identity.avatar'
+     omniauth.provider :slack, CLIENT_ID, CLIENT_SECRET, scope: 'identify, identity.basic, identity.email, identity.avatar'
     end
   end
 end
