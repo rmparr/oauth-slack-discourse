@@ -5,7 +5,7 @@
 # url: https://github.com/jcmrgo/oauth-slack-discourse
 
 require 'auth/oauth2_authenticator'
-gem 'ginjo-omniauth-slack', git: 'https://github.com/ginjo/omniauth-slack'
+gem 'ginjo-omniauth-slack', '2.4.0'
 
 enabled_site_setting :slack_auth_enabled
 
