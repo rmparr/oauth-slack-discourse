@@ -10,11 +10,11 @@ Installation Instructions (for Docker installations):
 * Open your container app.yml
 * Under section ```hooks``` add the follow line:
 ```
-          - git clone https://github.com/4xposed/oauth-slack-discourse.git
+          - git clone https://github.com/kukks/oauth-slack-discourse.git
 ```
 * Rebuild the docker container
 
 ```
-./launcher rebuild my_image
+./launcher rebuild app
 ```
 * Configure in admin
