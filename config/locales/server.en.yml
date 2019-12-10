@@ -1,6 +1,0 @@
-en:
-  site_settings:
-    slack_auth_enabled: 'Allow users to authenticate using Slack?'
-    slack_auth_client_id: 'LinkedIn Client ID (need one? visit <a href="https://api.slack.com/docs/oauth"https://api.slack.com/docs/oauth</a>)'
-    slack_auth_secret: 'Slack Secret Key'
-    slack_auth_team_id: 'Slack Team Id(optional)'

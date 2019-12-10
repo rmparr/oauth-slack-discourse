@@ -1,20 +1,8 @@
 # oauth-slack-discourse
 _________
 
-**Slack API Oauth2 for Discourse- fixed fork :)**
+**Slack API Oauth2 for Discourse- forked for non-Docker use**
 
-Installation Instructions (for Docker installations): 
+Add  `gem 'ginjo-omniauth-slack', '2.4.0'`  to project Gemfile.
 
-* Register a new Slack API application at: https://api.slack.com/applications/new if you haven't already
-  * For the Redirect URL: http(s)://example.com/auth/slack/callback
-* Open your container app.yml
-* Under section ```hooks``` add the follow line:
-```
-          - git clone https://github.com/kukks/oauth-slack-discourse.git
-```
-* Rebuild the docker container
-
-```
-./launcher rebuild app
-```
-* Configure in admin
+Add environment variables from .env.sample included in this plugin to project's environment variables.

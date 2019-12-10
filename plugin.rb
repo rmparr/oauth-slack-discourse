@@ -5,12 +5,13 @@
 # url: https://github.com/jcmrgo/oauth-slack-discourse
 
 require 'auth/oauth2_authenticator'
-gem 'ginjo-omniauth-slack', '2.4.0'
-
-enabled_site_setting :slack_auth_enabled
+require 'omniauth-slack'
 
 class SlackAuthenticator < ::Auth::OAuth2Authenticator
   PLUGIN_NAME = 'oauth-slack'
+  CLIENT_ID = ENV['SLACK_CLIENT_ID']
+  CLIENT_SECRET = ENV['SLACK_CLIENT_SECRET']
+  TEAM_ID = ENV['SLACK_TEAM_ID']
 
   def name
     'slack'
@@ -34,14 +35,14 @@ class SlackAuthenticator < ::Auth::OAuth2Authenticator
   def register_middleware(omniauth)
     
     unless TEAM_ID.nil?
-     omniauth.provider :slack, SiteSetting.slack_auth_client_id, SiteSetting.slack_auth_secret, scope: 'identity.basic, identity.email, identity.team, identity:read:user, team:read'
+     omniauth.provider :slack, CLIENT_ID, CLIENT_SECRET, scope: 'identity.basic, identity.email, identity.team'
     else
-     omniauth.provider :slack, SiteSetting.slack_auth_client_id, SiteSetting.slack_auth_secret, scope: 'identity.basic, identity.email, identity.team, identity:read:user, team:read', team: SiteSetting.slack_auth_team_id
+     omniauth.provider :slack, CLIENT_ID, CLIENT_SECRET, scope: 'identity.basic, identity.email, identity.team', team: TEAM_ID
     end
   end
 
   def enabled?
-    SiteSetting.slack_auth_enabled
+    true
   end
 end
 
